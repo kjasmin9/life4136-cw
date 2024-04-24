@@ -84,7 +84,8 @@ input protein sequences to find about functions and evolutionary relationships f
 
 ## Citations 
 The PyMOL Molecular Graphics System, Version 2.5.8 Schrödinger, LLC.
-Alpha (Varadi et al., 2022)Varadi, M. et al. (2022) ‘AlphaFold Protein Structure Database: massively expanding the structural coverage of protein-sequence space with high-accuracy models’, Nucleic Acids Research, 50(D1), pp. D439–D444. doi: 10.1093/nar/gkab1061.
+
+Varadi, M. et al. (2022) ‘AlphaFold Protein Structure Database: massively expanding the structural coverage of protein-sequence space with high-accuracy models’, Nucleic Acids Research, 50(D1), pp. D439–D444. doi: 10.1093/nar/gkab1061.
 
 
 
