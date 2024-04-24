@@ -1,0 +1,105 @@
+# obtain coordinates for coding sites for genes of interest
+# candidate genes id: g45503.t1 g42720.t1
+
+# from the .ggf3 files, get the position values for the CODING DNA 
+grep g45503  C_excelsa_V5_braker2_wRseq.gff3 | cat > g45503.gff3 
+grep g42720  C_excelsa_V5_braker2_wRseq.gff3 | cat > g42720.gff3
+
+# to make a ggf3 file with only CDS (coding regions) 
+ awk '$3 == "CDS" {print $0}' g45503.gff3 > CDS_g45503.gff3
+ awk '$3 == "CDS" {print $0}' g42720.gff3 > CDS_g42720.gff3
+															  
+
+# extract the coding genome 
+# extract coordinates of CDS from .fasta (to get only coding DNA sequence) do this separately for both genes
+
+
+# obtain index C_excelsa_V5.fasta.fai file
+samtools faidx C_excelsa_V5.fasta
+ 
+# cat the CDS_g45503.gff3 and CDS_g42720.gff3 files to access coordinates for the genes
+# CODE to get the CDS (coding) coordinates in the file 
+samtools faidx C_excelsa_V5.fasta Cexcelsa_scaf_2:33820099-33820358 \
+Cexcelsa_scaf_2:33820557-33820663 \
+Cexcelsa_scaf_2:33820786-33820841 \
+Cexcelsa_scaf_2:33820953-33821177 \
+Cexcelsa_scaf_2:33821325-33821531 \
+Cexcelsa_scaf_2:33821606-33821692 \
+Cexcelsa_scaf_2:33821782-33821877 \
+Cexcelsa_scaf_2:33821958-33822173 \
+Cexcelsa_scaf_2:33822253-33822435 \
+Cexcelsa_scaf_2:33822549-33822821 \
+> C_excelsa_RF_CDS_g45503.fasta   #RF = reference CDS=coding g45503=gene ID ; the file has the headers 
+
+#repeat process with CDS_g42720
+samtools faidx C_excelsa_V5.fasta Cexcelsa_scaf_2:19237478-19237720 \
+Cexcelsa_scaf_2:19237869-19237910 \
+>C_excelsa_RF_CDS_g42720.fasta
+
+
+
+#obtain coding regions coordinates from gff3 to bed format
+#do it for both genes 
+awk 'BEGIN {OFS="\t"} {print $1, $4, $5}' CDS_g45503.gff3 > g45503_coordinates.bed
+awk 'BEGIN {OFS="\t"} {print $1, $4, $5}' CDS_g42720.gff3 > g42720_coordinates.bed
+#$1 contains gene description (CDS), $4 contains coordinate start, $5 contains coordinate end
+
+#need bcftools for this: sudo apt install bcftools
+#get variants within the genes (g45503 and g42720) from the vcf files (the diploid and tetraploid variants.  
+#the .bed files provid the coordinates 
+
+#for g45503 diploids
+bgzip UK_scan_dips.vcf
+tabix -p vcf UK_scan_dips.vcf.gz
+bcftools view -R ../Reference_Genome/g45503_coordinates.bed UK_scan_dips.vcf.gz >  g45503_variants_dips.vcf
+
+#for g45503 tetraploids 
+tabix -p vcf UK_scan_tets.vcf.gz
+bcftools view -R ../Reference_Genome/g45503_coordinates.bed UK_scan_tets.vcf.gz > g45503_variants_tets.vcf
+
+#for g42720 diploids
+bcftools view -R ../Reference_Genome/g42720_coordinates.bed UK_scan_dips.vcf.gz > g42720_variants_dips.vcf
+
+# for g42720 tetraploids 
+bcftools view -R ../Reference_Genome/g42720_coordinates.bed UK_scan_tets.vcf.gz > g42720_variants_tets.vcf
+
+
+3)
+# zip all the VCF variants files created
+bgzip g*.vcf #assuming pattern only for the variants files
+
+# filter variants for each gene and ploidy level
+bcftools view -m2 -M2 -c 1 -v snps g42720_variants_dips.vcf.gz > g42720_variants_dips_filtered.vcf.gz
+
+bcftools view -m2 -M2 -c 1 -v snps g42720_variants_tets.vcf.gz > g42720_variants_tets_filtered.vcf.gz
+
+bcftools view -m2 -M2 -c 1 -v snps g45503_variants_dips.vcf.gz > g45503_variants_dips_filtered.vcf.gz
+
+bcftools view -m2 -M2 -c 1 -v snps g45503_variants_tets.vcf.gz > g45503_variants_tets_filtered.vcf.gz.gz
+
+# zip all filtered vcfs
+bgzip g*filtered*
+
+#BCFTOOLS CONSENSUS
+#prep for consensus 
+#index the reference .fasta files 
+samtools faidx C_excelsa_RF_CDS_g45503.fasta
+samtools faidx C_excelsa_RF_CDS_g2720.fasta
+#index the filtered.vcf.gz files 
+tabix -p vcf g42720_variants_dips_filtered.vcf.gz.gz
+tabix -p vcf g42720_variants_tets_filtered.vcf.gz.gz
+tabix -p vcf g45503_variants_dips_filtered.vcf.gz.gz
+tabix -p vcf g45503_variants_tets_filtered.vcf.gz.gz
+
+
+#carry out bcftools consensus
+bcftools consensus -s - -f C_excelsa_RF_CDS_g42720.fasta g42720_variants_dips_filtered.vcf.gz.gz > g42720_dips_consensus.fasta
+bcftools consensus -s - -f C_excelsa_RF_CDS_g42720.fasta g42720_variants_tets_filtered.vcf.gz.gz > g42720_tets_consensus.fasta
+bcftools consensus -s - -f C_excelsa_RF_CDS_g45503.fasta g45503_variants_dips_filtered.vcf.gz.gz > g45503_dips_consensus.fasta
+bcftools consensus -s - -f C_excelsa_RF_CDS_g45503.fasta g45503_variants_tets_filtered.vcf.gz.gz > g45503_tets_consensus.fasta
+
+#obtain DNA continuos string from each consensus file
+grep -v '>' g42720_dips_consensus.fasta
+grep -v '>' g42720_tets_consensus.fasta
+grep -v '>' g45503_dips_consensus.fasta
+grep -v '>' g45503_tets_consensus.fasta
