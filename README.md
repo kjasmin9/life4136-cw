@@ -2,6 +2,7 @@
 
 ## Description 
 This script serves to obtain a consensus file from a reference fasta and vcf files. the coordinates of the genes of interest are obtained from a gff3 file. 
+The aim for this script is to visualise protein 3D structure and compare synomymous mutations in diploid vs teraploid *Arabidopsis Thaliana*. 
 
 ## Requirements 
 samtools: Required for indexing FASTA files and handling VCF files.
@@ -79,4 +80,11 @@ refer to https://pymolwiki.org/index.php/CheatSheet for additional commands
 ## Additional resources: 
 InterPro: https://www.ebi.ac.uk/interpro/
 input protein sequences to find about functions and evolutionary relationships for protein of interest
+
+
+## Citations 
+Pymol
+The PyMOL Molecular Graphics System, Version 2.5.8 Schrödinger, LLC.
+
+
     
